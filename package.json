@@ -1,0 +1,10 @@
+{
+  "name": "@circlesac/skills",
+  "version": "26.2.0",
+  "description": "Public skills by Circles",
+  "files": ["cross-agent-skills"],
+  "pi": {
+    "skills": ["./cross-agent-skills"]
+  },
+  "license": "MIT"
+}

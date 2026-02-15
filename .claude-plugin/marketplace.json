@@ -1,0 +1,11 @@
+{
+  "name": "skills",
+  "owner": { "name": "Circles" },
+  "plugins": [
+    {
+      "name": "cross-agent-skills",
+      "source": "./cross-agent-skills",
+      "description": "Create and manage skill packages that work across Pi, Claude Code, and OpenClaw"
+    }
+  ]
+}
