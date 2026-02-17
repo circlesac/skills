@@ -6,6 +6,11 @@
       "name": "cross-agent-skills",
       "source": "./cross-agent-skills",
       "description": "Create and manage skill packages that work across Pi, Claude Code, and OpenClaw"
+    },
+    {
+      "name": "cross-platform-cli",
+      "source": "./cross-platform-cli",
+      "description": "Guide for building and distributing Rust CLIs across npm, Homebrew, and GitHub Releases"
     }
   ]
 }
