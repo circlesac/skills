@@ -1,7 +1,7 @@
 {
   "name": "@circlesac/skills",
   "version": "26.2.0",
-  "description": "Public skills by Circles",
+  "description": "Public skills by Circles Inc.",
   "files": ["cross-agent-skills", "cross-platform-cli"],
   "pi": {
     "skills": ["./cross-agent-skills", "./cross-platform-cli"]
