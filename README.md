@@ -1,13 +1,29 @@
-# skills
+# @circlesac/skills
 
-Public skills by Circles Inc. Each skill works across Pi, Claude Code, and OpenClaw.
+Meta-skills for building CLI tools and packaging them as AI skills.
+
+Started with [mcp-docs-server](https://github.com/circlesac/mcp-docs-server) — bundled docs as MCP prompts so agents could use them as slash commands. Two problems: Claude Code didn't reliably surface MCP prompts as slash commands, and prompts only run when you explicitly invoke them. ACL was on the roadmap but auth is always painful to build.
+
+Skills fix all of this. A `SKILL.md` file works as both a slash command and ambient context the agent picks up on its own. Deployed via npm or git, so access control is just repo visibility — no auth layer needed.
 
 ## Available Skills
 
 | Skill | Description |
 |-------|-------------|
-| **cross-agent-skills** | Create and manage skill packages that work across Pi, Claude Code, and OpenClaw |
-| **cross-platform-cli** | Guide for building and distributing Rust CLIs across npm, Homebrew, and GitHub Releases |
+| `/cross-agent-skills` | Author a skill package that works on Claude Code, Pi, and OpenClaw |
+| `/cross-platform-cli` | Scaffold and distribute a compiled CLI across npm, Homebrew, and GitHub Releases |
+
+## CLI tools + skills
+
+CLI tools that ship with skills — describe the interface once in a `SKILL.md`, the agent knows it forever.
+
+| CLI | Skill | Does | Install |
+|-----|-------|------|---------|
+| [`holla`](https://github.com/circlesac/holla-cli) | `/slack` | Slack — messages, threads, search, canvases | `circlesac/holla-cli` |
+| [`notas`](https://github.com/circlesac/notas-cli) | `/notion` | Notion — pages, databases, blocks, comments | `circlesac/notas-cli` |
+| [`oneup`](https://github.com/circlesac/oneup) | `/oneup` | CalVer version management | `circlesac/oneup` |
+
+Each repo ships both a binary and a skill. The agent calls the CLI directly — no separate API needed.
 
 ## Installation
 
