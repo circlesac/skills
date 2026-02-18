@@ -237,7 +237,7 @@ brew install org/tap/my-cli
 
 ## GitHub Actions Release Workflow
 
-A multi-job pipeline triggered manually via `workflow_dispatch`. No version commits — each job runs oneup independently to write the version before its step.
+A multi-job pipeline triggered manually via `workflow_dispatch`. No version commits — the version job calculates the next version once, writes it to target files, and shares them via artifact upload. Downstream jobs download the versioned files instead of running oneup independently.
 
 ```
 version → build (matrix) → github-release → publish-crates
@@ -271,6 +271,13 @@ jobs:
           VERSION=$(npx --yes @circlesac/oneup version --target Cargo.toml --target package.json | tail -1)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: versioned-files
+          path: |
+            Cargo.toml
+            package.json
+
   build:
     needs: version
     strategy:
@@ -296,8 +303,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Write version
-        run: npx --yes @circlesac/oneup version --target Cargo.toml
+      - uses: actions/download-artifact@v4
+        with:
+          name: versioned-files
 
       - name: Install cross-compilation tools
         if: matrix.target == 'aarch64-unknown-linux-gnu'
@@ -356,8 +364,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Write version
-        run: npx --yes @circlesac/oneup version --target Cargo.toml
+      - uses: actions/download-artifact@v4
+        with:
+          name: versioned-files
 
       - run: cargo publish --allow-dirty
         env:
@@ -377,8 +386,9 @@ jobs:
           node-version: "lts/*"
           registry-url: https://registry.npmjs.org
 
-      - name: Write version
-        run: npx --yes @circlesac/oneup version --target package.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: versioned-files
 
       - run: npm publish
 
