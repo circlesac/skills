@@ -80,20 +80,20 @@ If the repo also ships skills (has `pi.skills`), add `"skills"` to `files` so th
 
 ```js
 #!/usr/bin/env node
-const { spawnSync } = require("child_process");
-const { existsSync } = require("fs");
-const path = require("path");
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ext = process.platform === "win32" ? ".exe" : "";
 const bin = path.join(__dirname, "native", `my-cli${ext}`);
 
-(async () => {
-  if (!existsSync(bin)) {
-    await require("./install.js");
-  }
-  const result = spawnSync(bin, process.argv.slice(2), { stdio: "inherit" });
-  process.exit(result.status ?? 1);
-})();
+if (!existsSync(bin)) {
+  await import("./install.js");
+}
+const result = spawnSync(bin, process.argv.slice(2), { stdio: "inherit" });
+process.exit(result.status ?? 1);
 ```
 
 On first run, if the native binary is missing, it triggers the installer. Otherwise it delegates directly to the native binary.
@@ -101,12 +101,17 @@ On first run, if the native binary is missing, it triggers the installer. Otherw
 ### bin/install.js (Binary downloader)
 
 ```js
-const https = require("https");
-const fs = require("fs");
-const path = require("path");
-const { execSync } = require("child_process");
+import https from "node:https";
+import fs from "node:fs";
+import path from "node:path";
+import { execSync } from "node:child_process";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 
+const require = createRequire(import.meta.url);
 const { version } = require("../package.json");
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO = "org/my-cli";
 
 const PLATFORMS = {
@@ -117,7 +122,7 @@ const PLATFORMS = {
   "win32-x64":    { artifact: "my-cli-windows-amd64",  ext: ".zip"    },
 };
 
-async function download(url) {
+function download(url) {
   return new Promise((resolve, reject) => {
     https.get(url, (res) => {
       if (res.statusCode === 302 || res.statusCode === 301) {
@@ -132,39 +137,37 @@ async function download(url) {
   });
 }
 
-async function main() {
-  const platform = `${process.platform}-${process.arch}`;
-  const info = PLATFORMS[platform];
-  if (!info) {
-    console.error(`Unsupported platform: ${platform}`);
-    process.exit(1);
-  }
+if (process.env.CI) process.exit(0);
 
-  const { artifact, ext } = info;
-  const url = `https://github.com/${REPO}/releases/download/v${version}/${artifact}${ext}`;
-  const data = await download(url);
-  const nativeDir = path.join(__dirname, "native");
-  fs.mkdirSync(nativeDir, { recursive: true });
-
-  const tmp = path.join(nativeDir, `tmp${ext}`);
-  fs.writeFileSync(tmp, data);
-
-  if (ext === ".zip") {
-    execSync(`powershell -Command "Expand-Archive -Force '${tmp}' '${nativeDir}'"`, { cwd: nativeDir });
-  } else {
-    execSync(`tar xzf "${tmp}"`, { cwd: nativeDir });
-  }
-  fs.unlinkSync(tmp);
-
-  if (process.platform !== "win32") {
-    fs.chmodSync(path.join(nativeDir, "my-cli"), 0o755);
-  }
+const platform = `${process.platform}-${process.arch}`;
+const info = PLATFORMS[platform];
+if (!info) {
+  console.error(`Unsupported platform: ${platform}`);
+  process.exit(1);
 }
 
-module.exports = main();
+const { artifact, ext } = info;
+const url = `https://github.com/${REPO}/releases/download/v${version}/${artifact}${ext}`;
+const nativeDir = path.join(__dirname, "native");
+fs.mkdirSync(nativeDir, { recursive: true });
+
+const data = await download(url);
+const tmp = path.join(nativeDir, `tmp${ext}`);
+fs.writeFileSync(tmp, data);
+
+if (ext === ".zip") {
+  execSync(`powershell -Command "Expand-Archive -Force '${tmp}' '${nativeDir}'"`, { cwd: nativeDir });
+} else {
+  execSync(`tar xzf "${tmp}"`, { cwd: nativeDir });
+}
+fs.unlinkSync(tmp);
+
+if (process.platform !== "win32") {
+  fs.chmodSync(path.join(nativeDir, "my-cli"), 0o755);
+}
 ```
 
-Uses the version from package.json to construct the GitHub Release download URL. At install time, the published package.json already has the version (oneup wrote it before `npm publish`). No npm dependencies needed — just Node builtins.
+Uses the version from package.json to construct the GitHub Release download URL. At install time, the published package.json already has the version (oneup wrote it before `npm publish`). No npm dependencies needed — just Node builtins. Skips in CI to avoid downloading during `npm install` in the release pipeline.
 
 ### bin/install.sh (Standalone installer)
 
